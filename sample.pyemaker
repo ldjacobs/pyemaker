@@ -3,6 +3,10 @@
     "home",
     "pget",
     "sau",
-    "jupyter"
+    "jupyter",
+    "gitchangelog"
+  ],
+  "3.9.6": [
+    "oris"
   ]
 }
