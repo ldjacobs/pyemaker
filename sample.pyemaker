@@ -5,8 +5,5 @@
     "sau",
     "jupyter",
     "gitchangelog"
-  ],
-  "3.9.6": [
-    "oris"
   ]
 }
