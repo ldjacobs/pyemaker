@@ -96,7 +96,6 @@ read_config_file() {
   elif [ -f "./sample.pyemaker" ]; then
     config_file="./sample.pyemaker"
   fi
-  # FIXME -- Make this work!
   echo && echo "Reading config file ${config_file}"
   mapfile -t cfg_envs < <(jq -r 'keys[]' ${config_file})
   #declare -p cfg_envs
@@ -106,37 +105,6 @@ read_config_file() {
     done
   done
   #declare -p config
-}
-
-arraydiff() {
-  # From https://fabianlee.org/2020/09/06/bash-difference-between-two-arrays/
-  awk 'BEGIN{RS=ORS=" "}
-       {NR==FNR?a[$0]++:a[$0]--}
-       END{for(k in a)if(a[k])print k}' <(echo -n "${!1}") <(echo -n "${!2}")
-}
-
-env_config_diff() {
-  # Function to compare the env and config dictionaries.
-  env_keys=()
-  cfg_keys=()
-  val_diff=()
-  for key in "${!env_dict[@]}"; do
-    env_keys+=(${key})
-    if [[ ${env_dict[${key}]} != ${config[${key}]} ]]; then
-      val_diff+=(${key})
-    fi
-  done
-  #declare -p env_keys
-  for key in "${!config[@]}"; do
-    cfg_keys+=(${key})
-    if [[ ${config[${key}]} != ${env_dict[${key}]} ]]; then
-      val_diff+=(${key})
-    fi
-  done
-  #declare -p cfg_keys
-  key_diff=($(arraydiff env_keys[@] cfg_keys[@]))
-  #declare -p key_diff
-  #declare -p val_diff
 }
 
 get_python_versions_installed_but_not_configured() {
@@ -222,10 +190,6 @@ declare -A env_dict
 # Declare an array and a dictionary to hold the config data.
 cfg_envs=()
 declare -A config
-# Declare arrays for the keys that are not shared between env and config,
-# and for keys that have different values.
-key_diff=()
-val_diff=()
 # Declare arrays for Python versions and named versions that need to be installed or removed.
 py_to_install=()
 py_to_remove=()

@@ -1,9 +1,14 @@
 {
-  "3.10.6": [
+  "3.10.7": [
     "home",
-    "pget",
-    "sau",
     "jupyter",
     "gitchangelog"
+  ],
+  "3.10.6": [
+    "pget",
+    "sau",
+  ],
+  "3.9.14": [
+    "oris"
   ]
 }
