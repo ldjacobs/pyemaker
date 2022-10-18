@@ -13,6 +13,18 @@ white='[01;37m'
 yellow_red='[01;41;33m'
 none='[01;40;37m[00m'
 
+# Declare an array and a dictionary to hold the existing env data.
+ext_envs=()
+declare -A env_dict
+# Declare an array and a dictionary to hold the config data.
+cfg_envs=()
+declare -A cfg_dict
+# Declare arrays for Python versions and named versions that need to be installed or removed.
+py_to_install=()
+py_to_remove=()
+named_to_install=()
+named_to_remove=()
+
 get_versions() {
   # Function to get an array of all installed versions that pyenv knows about.
   # Puts results in global ${pyenv_versions}.
@@ -42,8 +54,8 @@ show_versions_get_file_line() {
 
 show_versions_get_list_dict() {
   # Function to show the current list of versions; also gets a dictionary of envs.
-  # Env list gets put in global ${envs}, dictionaries entries in ${env_dict}.
-  envs=()
+  # Env list gets put in global ${ext_envs}, dictionaries entries in ${env_dict}.
+  ext_envs=()
   env_dict=()
   echo && echo "${white}Currently-installed pyenv versions:${yellow}"
   for i in ${!pyenv_versions[@]}; do
@@ -56,9 +68,9 @@ show_versions_get_list_dict() {
       #declare -p env_dict
     else
       if ! [[ -n ${env_dict[${curval}]} ]]; then
-        envs+=(${curval})
+        ext_envs+=(${curval})
       fi
-      #declare -p envs
+      #declare -p ext_envs
     fi
   done
   echo ${none}
@@ -66,8 +78,8 @@ show_versions_get_list_dict() {
 
 get_versions_and_list_dict() {
   # Function to get the current list of versions and a dictionary of envs.
-  # Env list gets put in global ${envs}, dictionaries entries in ${env_dict}.
-  envs=()
+  # Env list gets put in global ${ext_envs}, dictionaries entries in ${env_dict}.
+  ext_envs=()
   env_dict=()
   for i in ${!pyenv_versions[@]}; do
     curval=$(echo ${pyenv_versions[$i]} | sed 's/^\w+//g')
@@ -78,19 +90,19 @@ get_versions_and_list_dict() {
       #declare -p env_dict
     else
       if ! [[ -n ${env_dict[${curval}]} ]]; then
-        envs+=(${curval})
+        ext_envs+=(${curval})
       fi
-      #declare -p envs
+      #declare -p ext_envs
     fi
   done
 }
 
 read_config_file() {
   # Function to read the user's ~/.pyemaker file, or ./sample.pyemaker otherwise.
-  # Config dictionary gets put in global ${config}.
+  # Config dictionary gets put in global ${cfg_dict}.
   config_file=''
   cfg_envs=()
-  config=()
+  cfg_dict=()
   if [ -f "~/.pyemaker" ]; then
     config_file="~/.pyemaker"
   elif [ -f "./sample.pyemaker" ]; then
@@ -101,10 +113,10 @@ read_config_file() {
   #declare -p cfg_envs
   for env in ${cfg_envs[@]}; do
     for ver in $(jq -r ".\"${env}\"[]" ${config_file}); do
-      config[${ver}]=${env}
+      cfg_dict[${ver}]=${env}
     done
   done
-  #declare -p config
+  #declare -p cfg_dict
 }
 
 get_python_versions_installed_but_not_configured() {
@@ -113,7 +125,7 @@ get_python_versions_installed_but_not_configured() {
   get_versions_and_list_dict
 
   py_to_remove=()
-  for ver in ${envs[@]}; do
+  for ver in ${ext_envs[@]}; do
     if [[ ! " ${cfg_envs[*]} " =~ " ${ver} " ]]; then
       py_to_remove+=(${ver})
     fi
@@ -127,7 +139,7 @@ get_python_versions_configured_but_not_installed() {
 
   py_to_install=()
   for ver in ${cfg_envs[@]}; do
-    if [[ ! " ${envs[*]} " =~ " ${ver} " ]]; then
+    if [[ ! " ${ext_envs[*]} " =~ " ${ver} " ]]; then
       py_to_install+=(${ver})
     fi
   done
@@ -139,10 +151,10 @@ get_named_versions_to_remove() {
   get_versions_and_list_dict
 
   #declare -p env_dict
-  #declare -p config
+  #declare -p cfg_dict
   named_to_remove=()
   for key in "${!env_dict[@]}"; do
-    if [[ ${config[$key]} != ${env_dict[$key]} ]]; then
+    if [[ ${cfg_dict[$key]} != ${env_dict[$key]} ]]; then
       named_to_remove+=(${key})
     fi
   done
@@ -155,10 +167,10 @@ get_named_versions_to_install() {
   get_versions_and_list_dict
 
   #declare -p env_dict
-  #declare -p config
+  #declare -p cfg_dict
   named_to_install=()
-  for key in "${!config[@]}"; do
-    if [[ ${env_dict[$key]} != ${config[$key]} ]]; then
+  for key in "${!cfg_dict[@]}"; do
+    if [[ ${env_dict[$key]} != ${cfg_dict[$key]} ]]; then
       named_to_install+=(${key})
     fi
   done
@@ -183,18 +195,6 @@ if [[ $ver_file_line -gt 0 ]]; then
     ;;
   esac
 fi
-
-# Declare an array and a dictionary to hold the existing env data.
-envs=()
-declare -A env_dict
-# Declare an array and a dictionary to hold the config data.
-cfg_envs=()
-declare -A config
-# Declare arrays for Python versions and named versions that need to be installed or removed.
-py_to_install=()
-py_to_remove=()
-named_to_install=()
-named_to_remove=()
 
 # Only need to do this once.
 read_config_file
@@ -290,7 +290,7 @@ while [[ ${something_to_do} == 1 ]]; do
       case ${answer:0:1} in
         y|Y )
           echo && echo "${green}Installing version ${key} now.${none}"
-          pyenv virtualenv ${config[$key]} ${key}
+          pyenv virtualenv ${cfg_dict[$key]} ${key}
         ;;
         * )
           echo && echo "${yellow}Version ${key} NOT installed.${none}"
