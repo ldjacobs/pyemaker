@@ -98,15 +98,18 @@ get_versions_and_list_dict() {
 }
 
 read_config_file() {
-  # Function to read the user's ~/.pyemaker file, or ./sample.pyemaker otherwise.
+  # Function to read the user's ~/.pyemaker file, or ./pyemaker.json otherwise.
   # Config dictionary gets put in global ${cfg_dict}.
   config_file=''
   cfg_envs=()
   cfg_dict=()
   if [ -f "~/.pyemaker" ]; then
     config_file="~/.pyemaker"
-  elif [ -f "./sample.pyemaker" ]; then
-    config_file="./sample.pyemaker"
+  elif [ -f "./pyemaker.json" ]; then
+    config_file="./pyemaker.json"
+  else
+    echo "${red}Config file not found!${none}"
+    exit 1
   fi
   echo && echo "Reading config file ${config_file}"
   mapfile -t cfg_envs < <(jq -r 'keys[]' ${config_file})
